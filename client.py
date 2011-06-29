@@ -2,12 +2,35 @@ import argparse
 from sword2 import Connection
 from sword2 import Entry
 
-SD_URI = 'http://localhost:8080/sd-uri'
+parser = argparse.ArgumentParser(description='Upload a folder as a zipfile into a sword repository.')
+parser.add_argument('-u',
+                    dest='user',
+                    action='store',
+                    default='',
+                    help='The username for authentication with the sword server.')
 
-c = Connection(SD_URI, user_name = "foo", user_pass="bar")
-import pdb;pdb.set_trace()
+parser.add_argument('-p',
+                    dest='password',
+                    action='store',
+                    default='',
+                    help='The password for authentication with the sword server.')
+
+parser.add_argument('-s',
+                    dest='sd_uri',
+                    action='store',
+                    default='',
+                    help='The URI of the service document for the repository.')
+
+sword_args = parser.parse_args()
+
+sd_uri = sword_args.sd_uri
+user = sword_args.user
+password = sword_args.password
+
+c = Connection(sd_uri, user_name=user, user_pass=password)
 
 c.get_service_document()
+import pdb;pdb.set_trace()
 # pick the first collection within the first workspace:
 workspace_1_title, workspace_1_collections = c.workspaces[0]
 collection = workspace_1_collections[0]
@@ -38,12 +61,3 @@ updated_receipt = c.update(metadata_entry = e,
                            in_progress = False)  # finish the deposit
 
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                   help='an integer for the accumulator')
-parser.add_argument('--sum', dest='accumulate', action='store_const',
-                   const=sum, default=max,
-                   help='sum the integers (default: find the max)')
-
-args = parser.parse_args()
-print(args.accumulate(args.integers))
