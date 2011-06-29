@@ -1,0 +1,5 @@
+.cache
+bin
+include
+lib
+sword2_logging.conf
