@@ -1,4 +1,5 @@
 import argparse
+import zipfile
 from sword2 import Connection
 from sword2 import Entry
 
@@ -31,19 +32,39 @@ connection = Connection(sd_uri, user_name=user, user_pass=password)
 
 
 connection.get_service_document()
-import pdb;pdb.set_trace()
-# pick the first collection within the first workspace:
-workspace_1_title, workspace_1_collections = connection.workspaces[0]
-collection = workspace_1_collections[0]
 
-# upload "package.zip" to this collection as a new (binary) resource:
-with open("package.zip", "r") as pkg:
-    receipt = connection.create(col_iri = collection.href,
-                                payload = pkg,
-                                mimetype = "application/zip",
-                                filename = "package.zip",
-                                packaging = 'http://purl.org/net/sword/package/Binary',
-                                in_progress = True)    # As the deposit isn't yet finished
+# If we have no workspaces, exit with a sensible message.
+if not connection.workspaces:
+    print 'There are no available workspaces to upload to. You might need to set a username and password'
+    sys.exit()
+
+# If there is only one workspace, use it.
+if len(connection.workspaces) == 1:
+    workspace_title, workspace_collections = connection.workspaces[0]
+else:
+    # Give the user a choice of workspaces.
+    print 'Please type the number of the workspace you want to upload to:'
+    for i in range(len(connection.workspaces)-1):
+        print '%s: %s' % (i+1, connection.workspaces[i])
+    workspace_index = int(raw_input())
+    workspace_title, workspace_collections = connection.workspaces[
+                                                 workspace_index - 1]
+
+# If we have no collections, exit with a sensible message.
+if not workspace_collections:
+    print 'There are no available collections to upload to. You might need to set a username and password'
+    sys.exit()
+
+# If there is only one collection, use it.
+if len(workspace_collections) == 1:
+    collection = workspace_collections[0]
+else:
+    # Give the user a choice of collections.
+    print 'Please type the number of the collection you want to upload to:'
+    for i in range(len(workspace_collections)-1):
+        print '%s: %s' % (i+1, workspace_collections[i].title)
+    collection_index = int(raw_input())
+    collection = workspace_collections[collection_index - 1]
 
 
 # Add a metadata record to this newly created resource (or 'container')
@@ -51,9 +72,15 @@ with open("package.zip", "r") as pkg:
 entry = Entry(id="atomid", 
           title="atom-title",
           dcterms_abstract = "Info about the resource....")
-# to add a new namespace:
-entry.register_namespace('skos', 'http://www.w3.org/2004/02/skos/core#')
-entry.add_field("skos_Concept", "...")
+# upload "package.zip" to this collection as a new (binary) resource:
+with open("package.zip", "r") as pkg:
+    receipt = connection.create(col_iri = collection.href,
+                                payload = pkg,
+                                mimetype = "application/zip",
+                                filename = "package.zip",
+                                packaging = 'http://purl.org/net/sword/package/Binary',
+                                metadata_entry=entry,
+                                in_progress = True)    # As the deposit isn't yet finished
 
 
 # Update the metadata entry to the resource:
